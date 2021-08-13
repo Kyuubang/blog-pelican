@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <meta name="generator" content="Pelican" />
+        <title>CTF: LKSN CyberSecurity 2021 - Reversing</title>
+        <link rel="stylesheet" href="https://kyuubang.github.io/blog-pelican/theme/css/main.css" />
+        <meta name="description" content="Recently I have been done for reversing challenge on module LKSN CyberSecurity 2020 ~~not as competitor :v~~. Very excited to get the flag on the..." />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="https://kyuubang.github.io/blog-pelican/">pelican - static site</a></h1>
+                <nav><ul>
+                    <li class="active"><a href="https://kyuubang.github.io/blog-pelican/category/security.html">Security</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="https://kyuubang.github.io/blog-pelican/ctf-lksn-cybersecurity-2021-reversing.html" rel="bookmark"
+           title="Permalink to CTF: LKSN CyberSecurity 2021 - Reversing">CTF: LKSN CyberSecurity 2021 - Reversing</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2021-01-17T00:00:00+07:00">
+                Published: Sun 17 January 2021
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="https://kyuubang.github.io/blog-pelican/author/kyuubang.html">kyuubang</a>
+        </address>
+<p>In <a href="https://kyuubang.github.io/blog-pelican/category/security.html">Security</a>.</p>
+
+</footer><!-- /.post-info -->      <p>Recently I have been done for reversing challenge on module LKSN CyberSecurity 2020
+~~not as competitor :v~~. Very excited to get the flag on the binary. Unfortunately, 
+I don’t have complete last challenge called bongkarzzz because website not available. 
+Probably, this closed after done the competition. Enjoy!</p>
+<div class="notice--danger">
+
+<h4 class="no_toc"><i class="fas fa-radiation"></i> Notice</h4>
+The information provided in this site is for educational purposes regarding 
+pentesting. The author of the site will not be held any responsibility for any 
+misuse of the information from this site.
+
+</div>
+
+<div class="notice--summary">
+<h4 class="no_toc"><i class="fas fa-sticky-note"></i> Summary</h4>
+<ul>
+<li><a href="#reverse-1">ltrace</a></li>
+<li><a href="#reverse-2">strings</a></li>
+<li><a href="#bongkarzzz">gdb</a></li>
+</ul>
+</div>
+<h2>Reverse 1</h2>
+<p>Given <code>ELF</code> 64-bit not stripped file, we have task to reverse the binary to get the 
+flag. I use file and readelf to get information this file. </p>
+<div class="highlight"><pre><span></span><code>$ file reverse1 
+reverse1: ELF <span class="m">64</span>-bit LSB shared object, x86-64, version <span class="m">1</span> <span class="o">(</span>SYSV<span class="o">)</span>, 
+dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, 
+BuildID<span class="o">[</span>sha1<span class="o">]=</span>73dfc3067c6b6a300c90ed9c29f3925c9d2f20a7, <span class="k">for</span> 
+GNU/Linux <span class="m">3</span>.2.0, not stripped
+$ readelf -h reverse1
+ELF Header:
+  Magic:   7f <span class="m">45</span> 4c <span class="m">46</span> <span class="m">02</span> <span class="m">01</span> <span class="m">01</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span>
+  Class:                             ELF64
+  Data:                              <span class="m">2</span><span class="err">&#39;</span>s complement, little endian
+  Version:                           <span class="m">1</span> <span class="o">(</span>current<span class="o">)</span>
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       <span class="m">0</span>
+  Type:                              DYN <span class="o">(</span>Shared object file<span class="o">)</span>
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x10c0
+  Start of program headers:          <span class="m">64</span> <span class="o">(</span>bytes into file<span class="o">)</span>
+  Start of section headers:          <span class="m">15680</span> <span class="o">(</span>bytes into file<span class="o">)</span>
+  Flags:                             0x0
+  Size of this header:               <span class="m">64</span> <span class="o">(</span>bytes<span class="o">)</span>
+  Size of program headers:           <span class="m">56</span> <span class="o">(</span>bytes<span class="o">)</span>
+  Number of program headers:         <span class="m">11</span>
+  Size of section headers:           <span class="m">64</span> <span class="o">(</span>bytes<span class="o">)</span>
+  Number of section headers:         <span class="m">30</span>
+  Section header string table index: <span class="m">29</span>
+</code></pre></div>
+
+<p>When I Execute that file then i get password prompt. So I should get the password,
+to get the flag.</p>
+<div class="highlight"><pre><span></span><code>$ chmod a+x ./reverse1
+$ ./reverse1         
+
+            .--<span class="sb">``</span>..---.                
+.CTF:<span class="sb">`</span>    .LKS-SMK28<span class="sb">`</span> 
+             <span class="sb">`</span>.--..<span class="sb">`</span>          
+
+CTF LKS SMK28
+ password:&gt; password
+ SMK BISA! 
+</code></pre></div>
+
+<p>I tried to use <code>ltrace</code> to tracing library when i execute the file. and i see 
+<code>strcmp</code> operations that mean the program try to compare the input string with 
+another string</p>
+<div class="highlight"><pre><span></span><code>$ ltrace ./reverse1  
+_ZNSt8ios_base4InitC1Ev<span class="o">(</span>0x5604e12382b9, 0xffff, 0x7fff7d84b2f8, <span class="m">224</span><span class="o">)</span> <span class="o">=</span> <span class="m">0</span>
+__cxa_atexit<span class="o">(</span>0x7f23c9f64a40, 0x5604e12382b9, 0x5604e1238060, <span class="m">6</span><span class="o">)</span> <span class="o">=</span> <span class="m">0</span>
+strcpy<span class="o">(</span>0x7fff7d84b0a3, <span class="s2">&quot;k0o&quot;</span><span class="o">)</span>                   <span class="o">=</span> 0x7fff7d84b0a3
+strcat<span class="o">(</span><span class="s2">&quot;k0o&quot;</span>, <span class="s2">&quot;pi_h&quot;</span><span class="o">)</span>                           <span class="o">=</span> <span class="s2">&quot;k0opi_h&quot;</span>
+_ZNSolsEPFRSoS_E<span class="o">(</span>0x5604e1238080, 0x7f23c9fd36d0, <span class="m">4</span>, 0x685f6970
+<span class="o">)</span> <span class="o">=</span> 0x5604e1238080
+_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc<span class="o">(</span>0x5604e1238080, 0x5604e1236010, <span class="m">0</span>, <span class="m">3072</span><span class="o">)</span> <span class="o">=</span> 0x5604e1238080
+_ZNSolsEPFRSoS_E<span class="o">(</span>0x5604e1238080, 0x7f23c9fd36d0, 0x5604e1238080, <span class="m">3072</span>             .--<span class="sb">``</span>..---.                
+<span class="o">)</span> <span class="o">=</span> 0x5604e1238080
+_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc<span class="o">(</span>0x5604e1238080, 0x5604e1236039, <span class="m">0</span>, <span class="m">3072</span><span class="o">)</span> <span class="o">=</span> 0x5604e1238080
+_ZNSolsEPFRSoS_E<span class="o">(</span>0x5604e1238080, 0x7f23c9fd36d0, 0x5604e1238080, <span class="m">3072</span> .CTF:<span class="sb">`</span>    .LKS-SMK28<span class="sb">`</span> 
+<span class="o">)</span> <span class="o">=</span> 0x5604e1238080
+_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc<span class="o">(</span>0x5604e1238080, 0x5604e1236058, <span class="m">0</span>, <span class="m">3072</span><span class="o">)</span> <span class="o">=</span> 0x5604e1238080
+_ZNSolsEPFRSoS_E<span class="o">(</span>0x5604e1238080, 0x7f23c9fd36d0, 0x5604e1238080, <span class="m">3072</span>             <span class="sb">`</span>.--..<span class="sb">`</span>          
+<span class="o">)</span> <span class="o">=</span> 0x5604e1238080
+_ZNSolsEPFRSoS_E<span class="o">(</span>0x5604e1238080, 0x7f23c9fd36d0, 0x5604e1238080, <span class="m">3072</span>
+<span class="o">)</span> <span class="o">=</span> 0x5604e1238080
+_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc<span class="o">(</span>0x5604e1238080, 0x5604e1236077, <span class="m">0</span>, <span class="m">3072</span><span class="o">)</span> <span class="o">=</span> 0x5604e1238080
+_ZNSolsEPFRSoS_E<span class="o">(</span>0x5604e1238080, 0x7f23c9fd36d0, 0x5604e1238080, 0x38324b4d5320534bCTF LKS SMK28
+<span class="o">)</span> <span class="o">=</span> 0x5604e1238080
+_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc<span class="o">(</span>0x5604e1238080, 0x5604e1236085, <span class="m">0</span>, <span class="m">3072</span><span class="o">)</span> <span class="o">=</span> 0x5604e1238080
+_ZStrsIcSt11char_traitsIcEERSt13basic_istreamIT_T0_ES6_PS3_<span class="o">(</span>0x5604e12381a0, 0x7fff7d84b0e0, 0x7f23ca0733d0, 0x203e3a64726f7773 password:&gt;  &lt;no <span class="k">return</span> ...&gt;
+--- SIGWINCH <span class="o">(</span>Window changed<span class="o">)</span> ---
+--- SIGWINCH <span class="o">(</span>Window changed<span class="o">)</span> ---
+--- SIGWINCH <span class="o">(</span>Window changed<span class="o">)</span> ---
+--- SIGWINCH <span class="o">(</span>Window changed<span class="o">)</span> ---
+k0opi_h
+&lt;... _ZStrsIcSt11char_traitsIcEERSt13basic_istreamIT_T0_ES6_PS3_ resumed&gt; <span class="o">)</span> <span class="o">=</span> 0x5604e12381a0
+strcat<span class="o">(</span><span class="s2">&quot;k0opi_h&quot;</span>, <span class="s2">&quot;ita&quot;</span><span class="o">)</span>                        <span class="o">=</span> <span class="s2">&quot;k0opi_hita&quot;</span>
+strcat<span class="o">(</span><span class="s2">&quot;k0opi_hita&quot;</span>, <span class="s2">&quot;m_pht&quot;</span><span class="o">)</span>                   <span class="o">=</span> <span class="s2">&quot;k0opi_hitam_pht&quot;</span>
+strcmp<span class="o">(</span><span class="s2">&quot;k0opi_h&quot;</span>, <span class="s2">&quot;k0opi_hitam_pht&quot;</span><span class="o">)</span>            <span class="o">=</span> -105
+_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc<span class="o">(</span>0x5604e1238080, 0x5604e123609f, <span class="m">105</span>, 0x68705f6d<span class="o">)</span> <span class="o">=</span> 0x5604e1238080
+_ZNSolsEPFRSoS_E<span class="o">(</span>0x5604e1238080, 0x7f23c9fd36d0, 0x5604e1238080, 0x202141534942204b SMK BISA! 
+<span class="o">)</span> <span class="o">=</span> 0x5604e1238080
++++ exited <span class="o">(</span>status <span class="m">0</span><span class="o">)</span> +++
+</code></pre></div>
+
+<p>I am interersting with the string <code>k0opi_hitam_pht</code> so i tried input into password
+prompt. and i get the flag! #PWNED</p>
+<div class="highlight"><pre><span></span><code>$ ./reverse1   
+
+             .--<span class="sb">``</span>..---.                
+.CTF:<span class="sb">`</span>    .LKS-SMK28<span class="sb">`</span> 
+             <span class="sb">`</span>.--..<span class="sb">`</span>          
+
+CTF LKS SMK28
+ password:&gt; k0opi_hitam_pht
+
+ LKSSMK28<span class="o">{</span>01c9fsd3gt34zxxcb0eb8a42d3c534rf3c570703e3t<span class="o">}</span> 
+</code></pre></div>
+
+<h2>Reverse 2</h2>
+<p>Next, given ELF 64-bit not stripped file called reverse2. and i get detail 
+information this file with <code>file</code> command.</p>
+<div class="highlight"><pre><span></span><code>$ file ./reverse2
+./reverse2: ELF <span class="m">64</span>-bit LSB shared object, x86-64, version <span class="m">1</span> <span class="o">(</span>SYSV<span class="o">)</span>, dynamically 
+linked, interpreter /lib64/ld-linux-x86-64.so.2, 
+BuildID<span class="o">[</span>sha1<span class="o">]=</span>20f01148e7568ccfd9e0162018d8ca8111e419c4, <span class="k">for</span> GNU/Linux <span class="m">3</span>.2.0, not stripped
+</code></pre></div>
+
+<p>I tried to see string that contains on the binary, and I see the flag that I 
+think it's not fake. So, i get one. But, i still want to know the realpassword.</p>
+<div class="highlight"><pre><span></span><code>$ strings ./reverse2 
+/lib64/ld-linux-x86-64.so.2
+libc.so.6
+__isoc99_scanf
+puts
+putchar
+<span class="nb">printf</span>
+__cxa_finalize
+strcmp
+__libc_start_main
+GLIBC_2.7
+GLIBC_2.2.5
+_ITM_deregisterTMCloneTable
+__gmon_start__
+_ITM_registerTMCloneTable
+u/UH
+0x00007fH
+trolf
+p4ssw0rdH
+LKSSMK28H
+yoik, yoH
+ur flag H
+is: LKSSH
+MK28<span class="o">{</span>r3vH
+3rs1ng<span class="o">}</span>
+%16s
+48661925H
+4b9c
+You FailH
+<span class="o">[]</span>A<span class="se">\A</span><span class="o">]</span>A^A_
+...
+...
+...
+</code></pre></div>
+
+<p>I interesting for string what i found <code>p4ssw0rd</code>. So, i tried to input into 
+password prompt. I used <code>ltrace</code> to tracing when file executed.</p>
+<div class="highlight"><pre><span></span><code>$ ltrace ./reverse2    
+puts<span class="o">(</span><span class="s2">&quot;||==============================&quot;</span>...<span class="o">||====================================================================||</span>
+<span class="o">)</span>     <span class="o">=</span> <span class="m">73</span>
+puts<span class="o">(</span><span class="s2">&quot;||//////////////////////////////&quot;</span>...<span class="o">||</span>////////////////////////////////////////////////////////////////////<span class="o">||</span>
+<span class="o">)</span>     <span class="o">=</span> <span class="m">73</span>
+puts<span class="o">(</span><span class="s2">&quot;||()========================| CT&quot;</span>...<span class="o">||()========================</span><span class="p">|</span> CTF <span class="p">|</span><span class="o">==========================()||</span>
+<span class="o">)</span>     <span class="o">=</span> <span class="m">66</span>
+puts<span class="o">(</span><span class="s2">&quot;||()======================LKS SM&quot;</span>...<span class="o">||()======================</span>LKS SMK <span class="nv">28</span><span class="o">=========================()||</span>
+<span class="o">)</span>     <span class="o">=</span> <span class="m">66</span>
+puts<span class="o">(</span><span class="s2">&quot;||//////////////////////////////&quot;</span>...<span class="o">||</span>////////////////////////////////////////////////////////////////////<span class="o">||</span>
+<span class="o">)</span>     <span class="o">=</span> <span class="m">73</span>
+puts<span class="o">(</span><span class="s2">&quot;||==============================&quot;</span>...<span class="o">||====================================================================||</span>
+<span class="o">)</span>     <span class="o">=</span> <span class="m">73</span>
+puts<span class="o">(</span><span class="s2">&quot;Password:&quot;</span>Password:
+<span class="o">)</span>                               <span class="o">=</span> <span class="m">10</span>
+__isoc99_scanf<span class="o">(</span>0x556fd5dab13c, 0x7ffe756f6920, <span class="m">0</span>, 0x7fea1e3c8ed3<span class="o">)</span> <span class="o">=</span> <span class="m">1</span>
+strcmp<span class="o">(</span><span class="s2">&quot;0x00007fff&quot;</span>, <span class="s2">&quot;puts(&quot;</span><span class="o">||========</span><span class="s2">&quot;)        = -64</span>
+<span class="s2">puts(&quot;</span>You Failed<span class="s2">&quot;You Failed</span>
+<span class="s2">)                              = 11</span>
+<span class="s2">+++ exited (status 0) +++</span>
+</code></pre></div>
+
+<p>i see <code>strcmp</code> operation that mean comparing string with <code>0x00007fff</code>. i tried 
+input this string and get the flag! alhamdulillah. </p>
+<div class="highlight"><pre><span></span><code>$ ./reverse2 
+<span class="o">||====================================================================||</span>
+<span class="o">||</span>////////////////////////////////////////////////////////////////////<span class="o">||</span>
+<span class="o">||()========================</span><span class="p">|</span> CTF <span class="p">|</span><span class="o">==========================()||</span>
+<span class="o">||()======================</span>LKS SMK <span class="nv">28</span><span class="o">=========================()||</span>
+<span class="o">||</span>////////////////////////////////////////////////////////////////////<span class="o">||</span>
+<span class="o">||====================================================================||</span>
+Password:
+0x00007fff
+You Win
+LKSSMK28<span class="o">{</span>LKSSMK28_486619254b9c9f6e6800cfae77<span class="o">}</span>  
+</code></pre></div>
+
+<h2>crackme</h2>
+<p>Next, given ELF 64-bit not stripped file called crackme. and i get detail 
+information this file with <code>file</code> command.</p>
+<div class="highlight"><pre><span></span><code>$ file crackme 
+crackme: ELF <span class="m">64</span>-bit LSB shared object, x86-64, version <span class="m">1</span> <span class="o">(</span>SYSV<span class="o">)</span>, 
+dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, 
+BuildID<span class="o">[</span>sha1<span class="o">]=</span>9283bfe84e4b274b954a775f733a5c9de669675a, <span class="k">for</span> 
+GNU/Linux <span class="m">3</span>.2.0, not stripped
+</code></pre></div>
+
+<p>I tried use <code>strings</code> to see strings that available on the binary. I found 
+<code>strcmp</code> that mean string compare operation.</p>
+<div class="highlight"><pre><span></span><code>$ strings crackme       
+/lib64/ld-linux-x86-64.so.2
+NK<span class="err">&#39;</span>K
+Jw_s:<span class="se">\</span>
+mgUa
+libc.so.6
+puts
+stdin
+<span class="nb">printf</span>
+fgets
+memset
+malloc
+__cxa_finalize
+strcmp
+__libc_start_main
+free
+GLIBC_2.2.5
+_ITM_deregisterTMCloneTable
+__gmon_start__
+_ITM_registerTMCloneTable
+u/UH
+<span class="o">[]</span>A<span class="se">\A</span><span class="o">]</span>A^A_
+Input Your Password
+Please try later.
+MANTUL, flag is LKSSMK28<span class="o">{</span>s<span class="o">}</span>
+Password Salah!
+<span class="p">;</span>*3$<span class="s2">&quot;</span>
+<span class="s2">sGCC: (Debian 9.2.1-19) 9.2.1 20191109</span>
+<span class="s2">crtstuff.c</span>
+<span class="s2">deregister_tm_clones</span>
+<span class="s2">....</span>
+<span class="s2">....</span>
+<span class="s2">....</span>
+</code></pre></div>
+
+<p>I used <code>ltrace</code> to see what binary do when executed. So, i input "password" into 
+password prompt and i see <code>strcmp</code> compared "password" with "JJJJJJJJJJJJJJBxs". </p>
+<div class="highlight"><pre><span></span><code>$ ltrace ./crackme 
+puts<span class="o">(</span><span class="s2">&quot;Hi!\nInput Your Password&quot;</span>Hi!
+Input Your Password
+<span class="o">)</span>                <span class="o">=</span> <span class="m">24</span>
+malloc<span class="o">(</span><span class="m">18</span><span class="o">)</span>                                      <span class="o">=</span> 0x5565bf7216b0
+memset<span class="o">(</span>0x5565bf7216b0, <span class="s1">&#39;\0&#39;</span>, <span class="m">18</span><span class="o">)</span>                <span class="o">=</span> 0x5565bf7216b0
+fgets<span class="o">(</span>password
+<span class="s2">&quot;password\n&quot;</span>, <span class="m">18</span>, 0x7f14edf29980<span class="o">)</span>         <span class="o">=</span> 0x5565bf7216b0
+strcmp<span class="o">(</span><span class="s2">&quot;password\n&quot;</span>, <span class="s2">&quot;JJJJJJJJJJJJJJBxs&quot;</span><span class="o">)</span>       <span class="o">=</span> <span class="m">38</span>
+puts<span class="o">(</span><span class="s2">&quot;Password Salah!&quot;</span>Password Salah!
+<span class="o">)</span>                         <span class="o">=</span> <span class="m">16</span>
+free<span class="o">(</span>0x5565bf7216b0<span class="o">)</span>                            <span class="o">=</span> &lt;void&gt;
++++ exited <span class="o">(</span>status <span class="m">0</span><span class="o">)</span> +++
+</code></pre></div>
+
+<p>after that, i tried to use "JJJJJJJJJJJJJJBxs" as password. and i get the flag!</p>
+<div class="highlight"><pre><span></span><code>$ ./crackme                                                            <span class="m">127</span> ⨯
+Hi!
+Input Your Password
+JJJJJJJJJJJJJJBxs
+MANTUL, flag is LKSSMK28<span class="o">{</span>JJJJJJJJJJJJJJBxs<span class="o">}</span>
+</code></pre></div>
+
+<h2>bongkarzzz</h2>
+<p>In the bongkarzzz challenge, we have task reverse ELF 32-bit not stripped binary
+file called bongkarzzz to have login website with username and password found in 
+bongkarzzz. For the first, i used <code>file</code> to get information type of file.</p>
+<div class="highlight"><pre><span></span><code>$ file bongkarzzz 
+bongkarzzz: ELF <span class="m">32</span>-bit LSB executable, Intel <span class="m">80386</span>, version <span class="m">1</span> <span class="o">(</span>SYSV<span class="o">)</span>,
+dynamically linked, interpreter /lib/ld-linux.so.2, <span class="k">for</span> GNU/Linux 
+<span class="m">2</span>.6.32, BuildID<span class="o">[</span>sha1<span class="o">]=</span>2e97060d42116e12d32b27d76c5af8202e980d2f, 
+not stripped
+</code></pre></div>
+
+<p>Next, i tried to execute the file, and i get "Cari password :(" when i input wrong
+password.</p>
+<div class="highlight"><pre><span></span><code>$ chmod +x bongkarzzz
+$ ./bongkarzzz 
+Cari Username : <span class="p">;</span>alskdjf
+Cari Password :<span class="o">(</span>
+</code></pre></div>
+
+<p>I used GNU Debugger to see value of binary file, and show available function on 
+binary.</p>
+<div class="highlight"><pre><span></span><code>$ gdb bongkarzzz
+GNU gdb <span class="m">9</span>.2
+Copyright <span class="o">(</span>C<span class="o">)</span> <span class="m">2020</span> Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version <span class="m">3</span> or later &lt;http://gnu.org/licenses/gpl.html&gt;
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type <span class="s2">&quot;show copying&quot;</span> and <span class="s2">&quot;show warranty&quot;</span> <span class="k">for</span> details.
+This GDB was configured as <span class="s2">&quot;x86_64-linux-gnu&quot;</span>.
+Type <span class="s2">&quot;show configuration&quot;</span> <span class="k">for</span> configuration details.
+For bug reporting instructions, please see:
+&lt;http://www.gnu.org/software/gdb/bugs/&gt;.
+Find the GDB manual and other documentation resources online at:
+&lt;http://www.gnu.org/software/gdb/documentation/&gt;.
+
+For help, <span class="nb">type</span> <span class="s2">&quot;help&quot;</span>.
+Type <span class="s2">&quot;apropos word&quot;</span> to search <span class="k">for</span> commands related to <span class="s2">&quot;word&quot;</span>...
+Reading symbols from bongkarzzz...
+<span class="o">(</span>No debugging symbols found <span class="k">in</span> bongkarzzz<span class="o">)</span>
+<span class="o">(</span>gdb<span class="o">)</span> info functions
+All defined functions:
+
+Non-debugging symbols:
+0x080482f4  _init
+0x08048330  printf@plt
+0x08048340  puts@plt
+0x08048350  __gmon_start__@plt
+0x08048360  __libc_start_main@plt
+0x08048370  __isoc99_scanf@plt
+0x08048380  _start
+0x080483b0  __x86.get_pc_thunk.bx
+0x080483c0  deregister_tm_clones
+0x080483f0  register_tm_clones
+0x08048430  __do_global_dtors_aux
+0x08048450  frame_dummy
+0x0804847b  main
+0x080484f0  __libc_csu_init
+0x08048560  __libc_csu_fini
+0x08048564  _fini
+<span class="o">(</span>gdb<span class="o">)</span>
+</code></pre></div>
+
+<p>i tried to see value of main function. and then i have <code>cmp</code> register 
+before <code>je</code> register this means that only equal value to have jump into next 
+statement.</p>
+<div class="highlight"><pre><span></span><code><span class="o">(</span>gdb<span class="o">)</span> disassemble main
+Dump of assembler code <span class="k">for</span> <span class="k">function</span> main:
+    0x0804847b &lt;+0&gt;:     lea    0x4<span class="o">(</span>%esp<span class="o">)</span>,%ecx
+    0x0804847f &lt;+4&gt;:     and    <span class="nv">$0</span>xfffffff0,%esp
+    0x08048482 &lt;+7&gt;:     pushl  -0x4<span class="o">(</span>%ecx<span class="o">)</span>
+    0x08048485 &lt;+10&gt;:    push   %ebp
+    0x08048486 &lt;+11&gt;:    mov    %esp,%ebp
+    0x08048488 &lt;+13&gt;:    push   %ecx
+    0x08048489 &lt;+14&gt;:    sub    <span class="nv">$0</span>x14,%esp
+    0x0804848c &lt;+17&gt;:    sub    <span class="nv">$0</span>xc,%esp
+    0x0804848f &lt;+20&gt;:    push   <span class="nv">$0</span>x8048580
+    0x08048494 &lt;+25&gt;:    call   0x8048330 &lt;printf@plt&gt;
+    0x08048499 &lt;+30&gt;:    add    <span class="nv">$0</span>x10,%esp
+    0x0804849c &lt;+33&gt;:    sub    <span class="nv">$0</span>x8,%esp
+    0x0804849f &lt;+36&gt;:    lea    -0xc<span class="o">(</span>%ebp<span class="o">)</span>,%eax
+    0x080484a2 &lt;+39&gt;:    push   %eax
+    0x080484a3 &lt;+40&gt;:    push   <span class="nv">$0</span>x8048591
+    0x080484a8 &lt;+45&gt;:    call   0x8048370 &lt;__isoc99_scanf@plt&gt;
+    0x080484ad &lt;+50&gt;:    add    <span class="nv">$0</span>x10,%esp
+    0x080484b0 &lt;+53&gt;:    mov    -0xc<span class="o">(</span>%ebp<span class="o">)</span>,%eax
+    0x080484b3 &lt;+56&gt;:    cmp    <span class="nv">$0</span>x111ee0,%eax
+    0x080484b8 &lt;+61&gt;:    je     0x80484cc &lt;main+81&gt;
+    0x080484ba &lt;+63&gt;:    sub    <span class="nv">$0</span>xc,%esp
+    0x080484bd &lt;+66&gt;:    push   <span class="nv">$0</span>x8048594
+    0x080484c2 &lt;+71&gt;:    call   0x8048340 &lt;puts@plt&gt;
+    0x080484c7 &lt;+76&gt;:    add    <span class="nv">$0</span>x10,%esp
+    0x080484ca &lt;+79&gt;:    jmp    0x80484e1 &lt;main+102&gt;
+    0x080484cc &lt;+81&gt;:    sub    <span class="nv">$0</span>x8,%esp
+    0x080484cf &lt;+84&gt;:    push   <span class="nv">$0</span>x65a4d9
+    0x080484d4 &lt;+89&gt;:    push   <span class="nv">$0</span>x80485a6
+    0x080484d9 &lt;+94&gt;:    call   0x8048330 &lt;printf@plt&gt;
+    0x080484de &lt;+99&gt;:    add    <span class="nv">$0</span>x10,%esp
+    0x080484e1 &lt;+102&gt;:   mov    <span class="nv">$0</span>x0,%eax
+    0x080484e6 &lt;+107&gt;:   mov    -0x4<span class="o">(</span>%ebp<span class="o">)</span>,%ecx
+    0x080484e9 &lt;+110&gt;:   leave  
+    0x080484ea &lt;+111&gt;:   lea    -0x4<span class="o">(</span>%ecx<span class="o">)</span>,%esp
+    0x080484ed &lt;+114&gt;:   ret    
+End of assembler dump.
+</code></pre></div>
+
+<p>if we see in <code>cmp</code> register <code>EAX</code> has comparing with <code>$0x111ee0</code>. So, i assume 
+<code>$0x111ee0</code> is real username.</p>
+<div class="highlight"><pre><span></span><code>0x080484b3 &lt;+56&gt;:    cmp    <span class="nv">$0</span>x111ee0,%eax
+</code></pre></div>
+
+<p>I tried to see value of <code>$0x111ee0</code> with python, and i get int <code>1122016</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="err">$</span> <span class="n">python3</span>
+<span class="n">Python</span> <span class="mf">3.8.5</span> <span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">Jul</span> <span class="mi">28</span> <span class="mi">2020</span><span class="p">,</span> <span class="mi">12</span><span class="p">:</span><span class="mi">59</span><span class="p">:</span><span class="mi">40</span><span class="p">)</span> 
+<span class="p">[</span><span class="n">GCC</span> <span class="mf">9.3.0</span><span class="p">]</span> <span class="n">on</span> <span class="n">linux</span>
+<span class="n">Type</span> <span class="s2">&quot;help&quot;</span><span class="p">,</span> <span class="s2">&quot;copyright&quot;</span><span class="p">,</span> <span class="s2">&quot;credits&quot;</span> <span class="ow">or</span> <span class="s2">&quot;license&quot;</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span><span class="o">.</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mh">0x111ee0</span>
+<span class="mi">1122016</span>
+</code></pre></div>
+
+<p>So, i tried input int <code>1122016</code> as username and i get different output yeay! </p>
+<div class="highlight"><pre><span></span><code>$ ./bongkarzzz 
+Cari Username : <span class="m">1122016</span>
+<span class="m">6661337</span>
+</code></pre></div>
+
+<div class="notice--reference">
+<h4 class="no_toc"><i class="fas fa-external-link-alt"></i> Reference</h4>
+<ul>
+<li><a href="https://geekpradd.github.io//intro-to-reverse-engineering">Introduction To Reverse Engineering</a></li>
+<li><a href="https://medium.com/bugbountywriteup/tryhackme-reversing-elf-writeup-6fd006704148">TryHackMe: Reversing ELF Writeup</a></li>
+<li><a href="http://www.manoharvanga.com/hackme/">hackme: Deconstructing ELF an file</a></li>
+</ul>
+</div>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="blogroll">
+                        <h2>links</h2>
+                        <ul>
+                            <li><a href="https://getpelican.com/">Pelican</a></li>
+                            <li><a href="https://www.python.org/">Python.org</a></li>
+                            <li><a href="https://palletsprojects.com/p/jinja/">Jinja2</a></li>
+                            <li><a href="#">You can modify those links in your config file</a></li>
+                        </ul>
+                </div><!-- /.blogroll -->
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+
+                            <li><a href="#">You can add links in your config file</a></li>
+                            <li><a href="#">Another social link</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

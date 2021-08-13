@@ -1,14 +1,7 @@
----
-title : "CTF: LKSN CyberSecurity 2020 - Reversing en"
-show_date: true
-toc: true
-tags:
-    - ltrace
-    - strings
-    - gdb
-categories:
-    - lks
----
+Title: CTF: LKSN CyberSecurity 2021 - Reversing
+Date: 2021-01-17
+Category: Security
+
 
 Recently I have been done for reversing challenge on module LKSN CyberSecurity 2020
 ~~not as competitor :v~~. Very excited to get the flag on the binary. Unfortunately, 
